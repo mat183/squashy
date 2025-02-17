@@ -22,19 +22,13 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // final messaging = FirebaseMessaging.instance;
-  // final settings = await messaging.requestPermission();
-
-  // if (kDebugMode) {
-  //   print('Permission granted: ${settings.authorizationStatus}');
-  // }
-
-  String? token = await FirebaseMessaging.instance.getToken();
+  final messaging = FirebaseMessaging.instance;
+  final settings = await messaging.requestPermission();
+  final token = await messaging.getToken();
 
   if (kDebugMode) {
-    print('Registration Token=$token');
-    // dXOYE85NQ5mMZDgRrUIHfz:APA91bHR7gEOaFymtEDd05rRYYl5f_0LcrBRumXtengcEmYeGk5cjukzcG8Cx2VERlh_oL16hmC4jdGdNmoNEj07_OjA7XMbySqvX03a3vDLJAlc0cG44ho (simulator android)
-    // fB9hqPFUSyKCqiI5u47pK3:APA91bEPU4veULFld_zfWUxlY5h4JLJEGEPhr7RllUJFi_yDEzjLzbmpJy-lmRCo2DLgsLvsIaa2DbXK_nQZGZntOIEJ3NuC5W0kOS4jwkRwlaqG5QxVx_M (physical device android)
+    print('Permission granted: ${settings.authorizationStatus}');
+    print('Registration Token = ${token ?? ''}');
   }
 
   // For foreground messages

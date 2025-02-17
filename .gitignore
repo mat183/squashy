@@ -27,6 +27,9 @@ migrate_working_dir/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
+.flutter-versions
+.packages
+.credentials.json
 .pub-cache/
 .pub/
 /build/
@@ -41,3 +44,35 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android-specific ignores
+android/.gradle/
+android/app/debug.keystore
+android/key.properties
+
+# Firebase Config Files (DO NOT COMMIT!)
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+
+# iOS-specific ignores
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/
+ios/Runner.xcworkspace/
+ios/DerivedData/
+ios/.dart_tool/
+
+# Xcode build artifacts
+xcuserdata/
+*.xcworkspace
+*.xcuserstate
+
+# Firebase Push Notification Keys (APNs)
+*.p8
+
+# Node modules (if using Firebase functions)
+functions/node_modules/
+
+# dotenv config (if using flutter_dotenv)
+.env
+.env.*
