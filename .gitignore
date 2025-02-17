@@ -53,6 +53,7 @@ android/key.properties
 # Firebase Config Files (DO NOT COMMIT!)
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
+lib/firebase_options.dart
 
 # iOS-specific ignores
 ios/Pods/
