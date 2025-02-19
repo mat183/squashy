@@ -6,10 +6,12 @@ class MatchItem extends StatelessWidget {
     super.key,
     required this.match,
     required this.onTapItem,
+    required this.onLongPressItem,
   });
 
   final Match match;
   final void Function() onTapItem;
+  final void Function() onLongPressItem;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +26,7 @@ class MatchItem extends StatelessWidget {
           ),
         ),
         onTap: onTapItem,
+        onLongPress: onLongPressItem,
       ),
     );
   }

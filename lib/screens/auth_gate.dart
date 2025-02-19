@@ -2,10 +2,18 @@ import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:flutter/material.dart';
-import 'package:squashy/widgets/match_list.dart';
+import 'package:squashy/screens/main_screen.dart';
+import 'package:squashy/services/token_service.dart';
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  final _tokenService = TokenService();
 
   @override
   Widget build(BuildContext context) {
@@ -22,8 +30,17 @@ class AuthGate extends StatelessWidget {
             ],
             actions: [
               AuthStateChangeAction<AuthFailed>((ctx, state) {
-                print("❌ Sign-in failed: ${state.exception}");
+                print('❌ Sign-in failed: ${state.exception}');
               }),
+              AuthStateChangeAction<SignedIn>((ctx, state) {
+                if (state.user != null) {
+                  print('Sign-in success: ${state.user!.uid}');
+                  _tokenService.saveToken(state.user!.uid);
+                  _tokenService.listenForTokenChanges(state.user!.uid);
+                } else {
+                  print('No user logged in!');
+                }
+              })
             ],
             headerBuilder: (ctx, constraints, shrinkOffset) => Padding(
               padding: const EdgeInsets.all(20.0),
@@ -48,7 +65,7 @@ class AuthGate extends StatelessWidget {
           );
         }
 
-        return const MatchList();
+        return const MainScreen();
       },
     );
   }

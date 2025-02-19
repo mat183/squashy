@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -71,6 +72,13 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
   }
 
   void _submitForm() {
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      print('User not logged in!');
+      Navigator.pop(context);
+    }
+
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       Navigator.pop(
@@ -79,6 +87,7 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
           id: _isEditing
               ? widget.match!.id
               : '0', // dummy id here, because it is set in matches_provider
+          userId: user!.uid,
           court: _selectedCourt,
           date: _selectedDate,
           status: _matchStatus,

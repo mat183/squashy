@@ -56,11 +56,13 @@ const Map<int, String> courtNames = {
 class Match {
   const Match(
       {required this.id,
+      required this.userId,
       required this.court,
       required this.date,
       required this.status});
 
   final String id;
+  final String userId;
   final int court;
   final DateTime date;
   final MatchStatus status;

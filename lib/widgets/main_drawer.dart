@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:squashy/widgets/summary.dart';
+import 'package:squashy/screens/summary_screen.dart';
 
 class MainDrawer extends StatelessWidget {
   const MainDrawer({super.key});

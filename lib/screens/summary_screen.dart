@@ -55,6 +55,7 @@ class SummaryScreen extends ConsumerWidget {
                 child: MatchItem(
                   match: match,
                   onTapItem: () {},
+                  onLongPressItem: () {},
                 ),
               );
             },

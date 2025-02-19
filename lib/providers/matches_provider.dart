@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:http/http.dart' as http;
 import 'package:squashy/models/match.dart';
@@ -32,6 +33,7 @@ class MatchesNotifier extends _$MatchesNotifier {
       return data.entries
           .map((entry) => Match(
                 id: entry.key,
+                userId: entry.value['userId'],
                 court: entry.value['court'],
                 date: DateTime.parse(entry.value['date']),
                 status: MatchStatus.values.byName(entry.value['status']),
@@ -52,6 +54,7 @@ class MatchesNotifier extends _$MatchesNotifier {
         },
         body: jsonEncode(
           {
+            'userId': match.userId,
             'court': match.court,
             'date': match.date.toString(),
             'status': match.status.toString().split('.').last,
@@ -66,6 +69,7 @@ class MatchesNotifier extends _$MatchesNotifier {
       final newMatchId = jsonDecode(response.body)['name'];
       final newMatch = Match(
         id: newMatchId,
+        userId: match.userId,
         court: match.court,
         date: match.date,
         status: match.status,
@@ -95,6 +99,12 @@ class MatchesNotifier extends _$MatchesNotifier {
 
   Future<void> updateMatch(Match match, MatchStatus status) async {
     try {
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        throw Exception('Failed to update match - user is not logged in!');
+      }
+
       final response = await http.patch(
         matchByIdUrl(match.id),
         headers: {
@@ -102,6 +112,7 @@ class MatchesNotifier extends _$MatchesNotifier {
         },
         body: jsonEncode(
           {
+            'userId': user.uid,
             'status': status.toString().split('.').last,
           },
         ),
@@ -115,6 +126,7 @@ class MatchesNotifier extends _$MatchesNotifier {
           .map((m) => m.id == match.id
               ? Match(
                   id: match.id,
+                  userId: user.uid,
                   court: match.court,
                   date: match.date,
                   status: status,
@@ -136,6 +148,7 @@ class MatchesNotifier extends _$MatchesNotifier {
         },
         body: jsonEncode(
           {
+            'userId': match.userId,
             'court': match.court,
             'date': match.date.toString(),
             'status': match.status.toString().split('.').last,
@@ -153,5 +166,10 @@ class MatchesNotifier extends _$MatchesNotifier {
       throw Exception(
           'Something went wrong during match replacing: ${error.toString()}');
     }
+  }
+
+  Future<void> refreshMatches() async {
+    final refreshedMatches = await _fetchMatches();
+    state = AsyncValue.data(refreshedMatches);
   }
 }

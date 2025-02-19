@@ -1,11 +1,9 @@
-import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squashy/models/match.dart';
 import 'package:squashy/providers/matches_provider.dart';
-import 'package:squashy/widgets/main_drawer.dart';
 import 'package:squashy/widgets/match_item.dart';
-import 'package:squashy/widgets/new_match.dart';
+import 'package:squashy/screens/new_match.dart';
 
 class MatchList extends ConsumerWidget {
   const MatchList({super.key});
@@ -36,6 +34,26 @@ class MatchList extends ConsumerWidget {
               Navigator.pop(ctx, MatchStatus.loss);
             },
             child: const Text('Loss'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _confirmMatchRemove(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm match removal'),
+        content: const Text('Are you sure you want to remove the match?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text("Remove", style: TextStyle(color: Colors.red)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text("Cancel"),
           ),
         ],
       ),
@@ -77,138 +95,58 @@ class MatchList extends ConsumerWidget {
     await ref.read(matchesNotifierProvider.notifier).removeMatch(match);
   }
 
-  void _addMatch(BuildContext context, WidgetRef ref, [Match? match]) async {
-    if (match != null) {
-      return await ref.read(matchesNotifierProvider.notifier).addMatch(match);
-    }
-
-    final newMatch = await Navigator.push<Match>(
-      context,
-      MaterialPageRoute(
-        builder: (ctx) => const NewMatchForm(),
-      ),
-    );
-
-    if (newMatch != null) {
-      await ref.read(matchesNotifierProvider.notifier).addMatch(newMatch);
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final leagueMatches = ref.watch(matchesNotifierProvider);
+    final allMatches = ref.watch(matchesNotifierProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Squash league'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (ctx) => ProfileScreen(
-                      appBar: AppBar(
-                        title: const Text('User Profile'),
-                      ),
-                      actions: [
-                        SignedOutAction(
-                          (ctx) => Navigator.pop(ctx),
-                        ),
-                      ],
-                      // children: [
-                      //   const Divider(),
-                      //   Padding(
-                      //     padding: const EdgeInsets.all(2),
-                      //     child: AspectRatio(
-                      //       aspectRatio: 1,
-                      //       child: Image.asset(
-                      //         'assets/flutterfire_300x.png',
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ],
-                    ),
-                  ));
-            },
-          ),
-        ],
-      ),
-      body: leagueMatches.when(
-        data: (matches) {
-          if (matches.isEmpty) {
-            return const Center(
-              child: Text('No matches found! Try to create one.'),
-            );
-          }
+    return allMatches.when(
+      data: (matches) {
+        if (matches.isEmpty) {
+          return const Center(
+            child: Text('No matches found! Try to create one.'),
+          );
+        }
 
-          final scheduledMatches = matches
-              .where((match) => match.status == MatchStatus.scheduled)
-              .toList();
-          return ListView.builder(
+        final scheduledMatches = matches
+            .where((match) => match.status == MatchStatus.scheduled)
+            .toList();
+        return RefreshIndicator(
+          onRefresh: () async {
+            await ref.read(matchesNotifierProvider.notifier).refreshMatches();
+          },
+          child: ListView.builder(
             itemCount: scheduledMatches.length,
             itemBuilder: (ctx, index) {
               final Match match = scheduledMatches[index];
               return Dismissible(
                 key: ValueKey(match.id),
                 background: Container(
-                  alignment: Alignment.centerLeft,
-                  color: Colors.green,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: const Icon(
-                    Icons.play_arrow,
-                    color: Colors.white,
-                  ),
-                ),
-                secondaryBackground: Container(
-                  alignment: Alignment.centerRight,
                   color: Colors.red,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: const Icon(
                     Icons.delete,
                     color: Colors.white,
                   ),
                 ),
-                confirmDismiss: (direction) async {
-                  if (direction == DismissDirection.endToStart) {
-                    return true;
-                  } else {
-                    _resolveMatch(ctx, ref, match);
-                    return false;
-                  }
-                },
+                confirmDismiss: (direction) => _confirmMatchRemove(ctx),
                 onDismissed: (direction) {
                   _removeMatch(ref, match);
                   ScaffoldMessenger.of(ctx).clearSnackBars();
                   ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                     content: const Text('League match has been removed!'),
-                    action: SnackBarAction(
-                      label: 'Undo',
-                      onPressed: () {
-                        _addMatch(ctx, ref, match);
-                      },
-                    ),
                   ));
                 },
                 child: MatchItem(
                   match: match,
                   onTapItem: () => _editMatch(ctx, ref, match),
+                  onLongPressItem: () => _resolveMatch(ctx, ref, match),
                 ),
               );
             },
-          );
-        },
-        error: (error, stack) => Center(child: Text("Error: $error")),
-        loading: () => const Center(child: CircularProgressIndicator()),
-      ),
-      drawer: const MainDrawer(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _addMatch(context, ref);
-        },
-        child: const Icon(Icons.add),
-      ),
+          ),
+        );
+      },
+      error: (error, stack) => Center(child: Text("Error: $error")),
+      loading: () => const Center(child: CircularProgressIndicator()),
     );
   }
 }
