@@ -12,9 +12,18 @@ enum MatchStatus {
 const Map<MatchStatus, Icon> statusIcons = {
   MatchStatus.scheduled: Icon(Icons.schedule),
   MatchStatus.cancelled: Icon(Icons.close),
-  MatchStatus.win: Icon(Icons.thumb_up),
-  MatchStatus.loss: Icon(Icons.thumb_down),
-  MatchStatus.draw: Icon(Icons.sync_alt_sharp)
+  MatchStatus.win: Icon(
+    Icons.check_circle,
+    color: Colors.green,
+  ),
+  MatchStatus.loss: Icon(
+    Icons.cancel,
+    color: Colors.red,
+  ),
+  MatchStatus.draw: Icon(
+    Icons.compare_arrows,
+    color: Colors.blue,
+  )
 };
 
 // TODO: to be fulfilled during the year :)

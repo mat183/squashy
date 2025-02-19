@@ -101,15 +101,16 @@ class MatchList extends ConsumerWidget {
 
     return allMatches.when(
       data: (matches) {
-        if (matches.isEmpty) {
+        final scheduledMatches = matches
+            .where((match) => match.status == MatchStatus.scheduled)
+            .toList();
+
+        if (scheduledMatches.isEmpty) {
           return const Center(
             child: Text('No matches found! Try to create one.'),
           );
         }
 
-        final scheduledMatches = matches
-            .where((match) => match.status == MatchStatus.scheduled)
-            .toList();
         return RefreshIndicator(
           onRefresh: () async {
             await ref.read(matchesNotifierProvider.notifier).refreshMatches();
