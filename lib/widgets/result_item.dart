@@ -40,18 +40,9 @@ class ResultItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(match.formattedDate),
-            Text(
-              'Court: ${courtNames[match.court]!}',
-              // style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+            Text('Court: ${courtNames[match.court]!}'),
           ],
         ),
-        // trailing: Text(
-        //   courtNames[match.court]!,
-        //   style: const TextStyle(
-        //     fontSize: 12,
-        //   ),
-        // ),
       ),
     );
   }
