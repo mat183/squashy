@@ -1,44 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squashy/models/match.dart';
-import 'package:squashy/providers/matches_provider.dart';
+import 'package:squashy/models/result.dart';
+import 'package:squashy/providers/match_provider.dart';
+import 'package:squashy/providers/result_provider.dart';
+import 'package:squashy/forms/resolve_match.dart';
 import 'package:squashy/widgets/match_item.dart';
-import 'package:squashy/screens/new_match.dart';
+import 'package:squashy/forms/new_match.dart';
 
 class MatchList extends ConsumerWidget {
   const MatchList({super.key});
-
-  Future<MatchStatus?> _showMatchResultDialog(
-      BuildContext context, Match match) {
-    return showDialog<MatchStatus>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Match result'),
-        content: Text('Court: ${match.court}\n'
-            'Date: ${match.formattedDate}'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx, MatchStatus.win);
-            },
-            child: const Text('Win'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx, MatchStatus.draw);
-            },
-            child: const Text('Draw'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx, MatchStatus.loss);
-            },
-            child: const Text('Loss'),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<bool?> _confirmMatchRemove(BuildContext context) {
     return showDialog<bool>(
@@ -69,35 +40,38 @@ class MatchList extends ConsumerWidget {
     );
 
     if (editedMatch != null) {
-      await ref
-          .read(matchesNotifierProvider.notifier)
-          .replaceMatch(editedMatch);
+      await ref.read(matchNotifierProvider.notifier).replaceMatch(editedMatch);
     }
   }
 
   void _resolveMatch(BuildContext context, WidgetRef ref, Match match) async {
-    final status = await _showMatchResultDialog(context, match);
+    final result = await Navigator.push<Result>(
+        context,
+        MaterialPageRoute(
+            builder: (ctx) => ResolveMatchForm(matchId: match.id)));
 
-    if (status != null) {
+    if (result != null) {
       await ref
-          .watch(matchesNotifierProvider.notifier)
-          .updateMatch(match, status);
+          .read(matchNotifierProvider.notifier)
+          .updateMatch(match.id, MatchStatus.resolved);
+      await ref.read(resultNotifierProvider.notifier).addResult(result);
       if (context.mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('League match resolved and moved to summary tab!'),
+          content:
+              Text('League match resolved and result moved to summary tab!'),
         ));
       }
     }
   }
 
   void _removeMatch(WidgetRef ref, Match match) async {
-    await ref.read(matchesNotifierProvider.notifier).removeMatch(match);
+    await ref.read(matchNotifierProvider.notifier).removeMatch(match.id);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allMatches = ref.watch(matchesNotifierProvider);
+    final allMatches = ref.watch(matchStreamProvider);
 
     return allMatches.when(
       data: (matches) {
@@ -113,7 +87,7 @@ class MatchList extends ConsumerWidget {
 
         return RefreshIndicator(
           onRefresh: () async {
-            await ref.read(matchesNotifierProvider.notifier).refreshMatches();
+            // await ref.read(matchNotifierProvider.notifier).refreshMatches();
           },
           child: ListView.builder(
             itemCount: scheduledMatches.length,

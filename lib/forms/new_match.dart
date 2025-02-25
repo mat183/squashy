@@ -47,7 +47,7 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
         pickedDate.month,
         pickedDate.day,
         pickedTime.hour,
-        pickedTime.minute < 30 ? 0 : 30,
+        pickedTime.minute,
       );
       _dateController.text =
           DateFormat('yyyy-MM-dd HH:mm').format(_selectedDate);
@@ -62,7 +62,7 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
       now.month,
       now.day,
       now.hour,
-      now.minute < 30 ? 0 : 30,
+      now.minute,
     );
     setState(() {
       _dateController.text = DateFormat('yyyy-MM-dd HH:mm').format(roundedNow);
@@ -106,7 +106,7 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
       now.month,
       now.day,
       now.hour,
-      now.minute < 30 ? 0 : 30,
+      now.minute,
     );
     _dateController = TextEditingController(
       text: _isEditing

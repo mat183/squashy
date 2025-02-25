@@ -2,10 +2,10 @@ import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squashy/models/match.dart';
-import 'package:squashy/providers/matches_provider.dart';
+import 'package:squashy/providers/match_provider.dart';
 import 'package:squashy/widgets/main_drawer.dart';
 import 'package:squashy/widgets/match_list.dart';
-import 'package:squashy/screens/new_match.dart';
+import 'package:squashy/forms/new_match.dart';
 
 class MainScreen extends ConsumerWidget {
   const MainScreen({super.key});
@@ -19,7 +19,7 @@ class MainScreen extends ConsumerWidget {
     );
 
     if (newMatch != null) {
-      await ref.read(matchesNotifierProvider.notifier).addMatch(newMatch);
+      await ref.read(matchNotifierProvider.notifier).addMatch(newMatch);
     }
   }
 

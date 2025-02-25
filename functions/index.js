@@ -5,7 +5,7 @@ admin.initializeApp();
 
 export const sendAddMatchNotification = functions.database.onValueCreated(
   {
-    ref: 'league-matches/{matchId}',
+    ref: 'matches/{matchId}',
     instance: 'squashy-*',
     region: 'europe-west1',
   },
@@ -51,7 +51,7 @@ export const sendAddMatchNotification = functions.database.onValueCreated(
 
 export const sendRemoveMatchNotification = functions.database.onValueDeleted(
   {
-    ref: 'league-matches/{matchId}',
+    ref: 'matches/{matchId}',
     instance: 'squashy-*',
     region: 'europe-west1',
   },
@@ -96,7 +96,7 @@ export const sendRemoveMatchNotification = functions.database.onValueDeleted(
 
 export const sendUpdateMatchNotification = functions.database.onValueUpdated(
   {
-    ref: 'league-matches/{matchId}',
+    ref: 'matches/{matchId}',
     instance: 'squashy-*',
     region: 'europe-west1',
   },

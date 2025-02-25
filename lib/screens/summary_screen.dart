@@ -1,28 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squashy/models/match.dart';
-import 'package:squashy/providers/matches_provider.dart';
-import 'package:squashy/widgets/match_item.dart';
+import 'package:squashy/models/result.dart';
+import 'package:squashy/providers/match_provider.dart';
+import 'package:squashy/providers/result_provider.dart';
+import 'package:squashy/widgets/result_item.dart';
 
 class SummaryScreen extends ConsumerWidget {
   const SummaryScreen({super.key});
 
-  void _removeMatch(WidgetRef ref, Match match) async {
-    await ref.read(matchesNotifierProvider.notifier).removeMatch(match);
+  void _removeResult(WidgetRef ref, Result result) async {
+    await ref.read(resultNotifierProvider.notifier).removeResult(result.id);
+    await ref.read(matchNotifierProvider.notifier).removeMatch(result.matchId);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allMatches = ref.watch(matchesNotifierProvider);
+    final allResults = ref.watch(resultStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Summary'),
       ),
-      body: allMatches.when(
-        data: (matches) {
-          final resolvedMatches = matches
-              .where((match) => match.status != MatchStatus.scheduled)
+      body: allResults.when(
+        data: (results) {
+          final resolvedMatches = ref
+              .read(matchStreamProvider)
+              .requireValue
+              .where((match) => match.status == MatchStatus.resolved)
               .toList();
 
           if (resolvedMatches.isEmpty) {
@@ -31,14 +36,14 @@ class SummaryScreen extends ConsumerWidget {
             );
           }
 
-          final wins = resolvedMatches
-              .where((match) => match.status == MatchStatus.win)
+          final wins = results
+              .where((result) => result.verdict == MatchVerdict.win)
               .length;
-          final draws = resolvedMatches
-              .where((match) => match.status == MatchStatus.draw)
+          final draws = results
+              .where((result) => result.verdict == MatchVerdict.draw)
               .length;
-          final losses = resolvedMatches
-              .where((match) => match.status == MatchStatus.loss)
+          final losses = results
+              .where((result) => result.verdict == MatchVerdict.loss)
               .length;
           return Column(
             children: [
@@ -47,7 +52,7 @@ class SummaryScreen extends ConsumerWidget {
                   padding: EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      Text("Total Matches: ${resolvedMatches.length}",
+                      Text("Total Matches: ${results.length}",
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold)),
                       SizedBox(height: 8),
@@ -74,9 +79,11 @@ class SummaryScreen extends ConsumerWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               Expanded(
                 child: ListView.builder(
-                  itemCount: resolvedMatches.length,
+                  itemCount: results.length,
                   itemBuilder: (ctx, index) {
-                    final Match match = resolvedMatches[index];
+                    final Result result = results[index];
+                    final Match match = resolvedMatches
+                        .firstWhere((m) => m.id == result.matchId);
                     return Dismissible(
                       key: ValueKey(match.id),
                       background: Container(
@@ -87,7 +94,7 @@ class SummaryScreen extends ConsumerWidget {
                         ),
                       ),
                       onDismissed: (direction) {
-                        _removeMatch(ref, match);
+                        _removeResult(ref, result);
                         ScaffoldMessenger.of(ctx).clearSnackBars();
                         ScaffoldMessenger.of(ctx).showSnackBar(
                           const SnackBar(
@@ -95,10 +102,9 @@ class SummaryScreen extends ConsumerWidget {
                           ),
                         );
                       },
-                      child: MatchItem(
+                      child: ResultItem(
                         match: match,
-                        onTapItem: () {},
-                        onLongPressItem: () {},
+                        result: result,
                       ),
                     );
                   },

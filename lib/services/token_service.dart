@@ -1,31 +1,37 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 class TokenService {
-  Future<void> saveToken(String userId) async {
+  static Future<void> saveToken(User user) async {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
     NotificationSettings settings = await messaging.requestPermission();
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      String? token = await messaging.getToken();
+      String? fcmToken = await messaging.getToken();
 
-      if (token != null) {
-        await FirebaseFirestore.instance.collection('users').doc(userId).set(
-          {
-            'fcm_token': token,
-          },
-          SetOptions(merge: true),
-        );
+      if (fcmToken == null) {
+        print(
+            'Firebase cloud messaging won\'t be enabled for user ${user.uid}');
       }
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
+        {
+          'name': user.displayName ?? 'Unknown',
+          'email': user.email ?? 'Unknown',
+          'fcmToken': fcmToken ?? '',
+        },
+        SetOptions(merge: true),
+      );
     } else {
       print('Notification permission denied.');
     }
   }
 
-  void listenForTokenChanges(String userId) {
+  static void listenForTokenChanges(User user) {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
     messaging.onTokenRefresh.listen((newToken) async {
-      await FirebaseFirestore.instance.collection('users').doc(userId).update(
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
         {
           'fcm_token': newToken,
         },

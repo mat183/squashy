@@ -13,8 +13,6 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
-  final _tokenService = TokenService();
-
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
@@ -35,8 +33,8 @@ class _AuthGateState extends State<AuthGate> {
               AuthStateChangeAction<SignedIn>((ctx, state) {
                 if (state.user != null) {
                   print('Sign-in success: ${state.user!.uid}');
-                  _tokenService.saveToken(state.user!.uid);
-                  _tokenService.listenForTokenChanges(state.user!.uid);
+                  TokenService.saveToken(state.user!);
+                  TokenService.listenForTokenChanges(state.user!);
                 } else {
                   print('No user logged in!');
                 }

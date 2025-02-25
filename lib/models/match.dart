@@ -3,37 +3,24 @@ import 'package:intl/intl.dart';
 
 enum MatchStatus {
   scheduled,
+  resolved,
   cancelled,
-  win,
-  loss,
-  draw,
 }
 
 const Map<MatchStatus, Icon> statusIcons = {
   MatchStatus.scheduled: Icon(Icons.schedule),
+  MatchStatus.resolved: Icon(Icons.check),
   MatchStatus.cancelled: Icon(Icons.close),
-  MatchStatus.win: Icon(
-    Icons.check_circle,
-    color: Colors.green,
-  ),
-  MatchStatus.loss: Icon(
-    Icons.cancel,
-    color: Colors.red,
-  ),
-  MatchStatus.draw: Icon(
-    Icons.compare_arrows,
-    color: Colors.blue,
-  )
 };
 
 // TODO: to be fulfilled during the year :)
 const Map<int, String> courtNames = {
   1: '1',
-  2: 'SARAGOSSA',
-  3: 'SANTA CRUZ',
-  4: 'GRENADA',
-  5: 'BARCELONA',
-  6: '6',
+  2: 'SARAGOSSA (2)',
+  3: 'SANTA CRUZ (3)',
+  4: 'GRENADA (4)',
+  5: 'BARCELONA (5)',
+  6: 'MADRYT (6)',
   7: '7',
   8: '8',
   9: '9',
