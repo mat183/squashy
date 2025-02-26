@@ -30,7 +30,7 @@ class NotificationService {
         print('Message data: ${message.data}');
       }
 
-      messageStreamController.add(message); // Forward to BehaviorSubject
+      messageStreamController.add(message);
     });
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }

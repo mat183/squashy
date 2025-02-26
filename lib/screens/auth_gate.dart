@@ -32,13 +32,13 @@ class _AuthGateState extends State<AuthGate> {
               }),
               AuthStateChangeAction<SignedIn>((ctx, state) {
                 if (state.user != null) {
-                  print('Sign-in success: ${state.user!.uid}');
+                  print('✅ Sign-in success: ${state.user!.uid}');
                   TokenService.saveToken(state.user!);
                   TokenService.listenForTokenChanges(state.user!);
                 } else {
                   print('No user logged in!');
                 }
-              })
+              }),
             ],
             headerBuilder: (ctx, constraints, shrinkOffset) => Padding(
               padding: const EdgeInsets.all(20.0),

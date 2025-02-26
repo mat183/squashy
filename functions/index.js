@@ -1,140 +1,116 @@
 import admin from 'firebase-admin';
-import * as functions from 'firebase-functions';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getMessaging } from 'firebase-admin/messaging';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { setGlobalOptions } from 'firebase-functions';
 
 admin.initializeApp();
 
-export const sendAddMatchNotification = functions.database.onValueCreated(
-  {
-    ref: 'matches/{matchId}',
-    instance: 'squashy-*',
-    region: 'europe-west1',
-  },
+const db = getFirestore();
+const messaging = getMessaging();
+
+setGlobalOptions({ region: 'europe-west1' });
+
+export const scheduleMatchNotification = onDocumentCreated(
+  'matches/{matchId}',
   async (event) => {
-    const matchData = event.data.val();
-    const senderId = matchData.userId;
-
-    functions.logger.info('Match data for add', matchData);
-
-    const title = 'League matches list changed!';
-    const body = 'A new match has been scheduled!';
-
-    const usersSnapshot = await admin.firestore().collection('users').get();
-    const tokens = [];
-
-    usersSnapshot.forEach((doc) => {
-      functions.logger.info('User data:', doc.data());
-      const userData = doc.data();
-      if (userData.fcm_token && doc.id !== senderId) {
-        tokens.push(userData.fcm_token);
-      }
-    });
-
-    if (tokens.length === 0) {
-      functions.logger.warn('No users to notify.');
+    const matchData = event.data?.data();
+    if (!matchData || !matchData.date) {
+      console.log('No match data or date found.');
       return null;
     }
 
-    const payload = {
-      notification: {
-        title,
-        body,
-      },
-      data: {
-        type: 'match_added',
-      },
-      tokens,
-    };
+    const matchDate = new Date(matchData.date);
+    const now = new Date();
+    const notificationTime = new Date(
+      matchDate.getTime() - 1000 * 60 * 60 * 12
+    );
 
-    await admin.messaging().sendEachForMulticast(payload);
+    await db.collection('scheduled_notifications').add({
+      userId: matchData.userId,
+      matchId: event.params.matchId,
+      createdAt: Timestamp.fromDate(now),
+      sendAt: Timestamp.fromDate(notificationTime),
+    });
   }
 );
 
-export const sendRemoveMatchNotification = functions.database.onValueDeleted(
-  {
-    ref: 'matches/{matchId}',
-    instance: 'squashy-*',
-    region: 'europe-west1',
-  },
-  async (event) => {
-    const matchData = event.data.val();
-    const senderId = matchData.userId;
+export const processScheduledNotifications = onSchedule(
+  'every 1 hours',
+  async () => {
+    const now = Timestamp.now();
+    const snapshot = await db
+      .collection('scheduled_notifications')
+      .where('sendAt', '<=', now)
+      .get();
 
-    functions.logger.info('Match data for remove', matchData);
+    if (snapshot.empty) {
+      console.log('No scheduled notifications to send.');
+      return null;
+    }
 
-    const title = 'League matches list changed!';
-    const body = 'One match from the list has been removed!';
-
-    const usersSnapshot = await admin.firestore().collection('users').get();
-    const tokens = [];
-
-    usersSnapshot.forEach((doc) => {
-      const userData = doc.data();
-      if (userData.fcm_token && doc.id !== senderId) {
-        tokens.push(userData.fcm_token);
-      }
-    });
+    const usersSnapshot = await db.collection('users').get();
+    const tokens = usersSnapshot.docs
+      .map((doc) => doc.data().fcmToken)
+      .filter(Boolean);
 
     if (tokens.length === 0) {
       functions.logger.warn('No users to notify.');
       return null;
     }
 
-    const payload = {
-      notification: {
-        title,
-        body,
-      },
-      data: {
-        type: 'match_removed',
-      },
-      tokens,
-    };
+    for (const doc of snapshot.docs) {
+      const { matchId, createdAt, sendAt } = doc.data();
+      const matchDoc = await db.collection('matches').doc(matchId).get();
 
-    await admin.messaging().sendEachForMulticast(payload);
-  }
-);
-
-export const sendUpdateMatchNotification = functions.database.onValueUpdated(
-  {
-    ref: 'matches/{matchId}',
-    instance: 'squashy-*',
-    region: 'europe-west1',
-  },
-  async (event) => {
-    const matchData = event.data.val();
-    const senderId = matchData.userId;
-
-    functions.logger.info('Match data for update', matchData);
-
-    const title = 'League matches list changed!';
-    const body = 'One match from the list has been updated!';
-
-    const usersSnapshot = await admin.firestore().collection('users').get();
-    const tokens = [];
-
-    usersSnapshot.forEach((doc) => {
-      const userData = doc.data();
-      if (userData.fcm_token && doc.id !== senderId) {
-        tokens.push(userData.fcm_token);
+      if (!matchDoc.exists) {
+        console.log('Match not found:', matchId);
+        continue;
       }
-    });
 
-    if (tokens.length === 0) {
-      functions.logger.warn('No users to notify.');
-      return null;
+      const matchData = matchDoc.data();
+      const payload = {
+        notification: {
+          title: sendAt > createdAt ? 'Upcoming match!' : 'New match!',
+          body:
+            sendAt > createdAt
+              ? `Your match on court ${matchData.court} is coming up soon!`
+              : `New match with earlier date on court ${matchData.court} added!`,
+        },
+        data: {
+          type: 'scheduled_match_reminder',
+        },
+        android: {
+          priority: 'high',
+          notification: {
+            channelId: 'high_priority_channel',
+            sound: 'default',
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              contentAvailable: true,
+              sound: 'default',
+            },
+          },
+          headers: {
+            'apns-priority': '10',
+          },
+        },
+        tokens,
+      };
+
+      try {
+        const response = await messaging.sendEachForMulticast(payload);
+        console.log(
+          `Notifications sent: ${response.successCount} success, ${response.failureCount} failed`
+        );
+        await doc.ref.delete();
+      } catch (error) {
+        console.error('Error sending notifications:', error);
+      }
     }
-
-    const payload = {
-      notification: {
-        title,
-        body,
-      },
-      data: {
-        type: 'match_updated',
-      },
-      tokens,
-    };
-
-    await admin.messaging().sendEachForMulticast(payload);
   }
 );
