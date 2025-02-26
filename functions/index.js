@@ -21,7 +21,7 @@ export const scheduleMatchNotification = onDocumentCreated(
       return null;
     }
 
-    const matchDate = new Date(matchData.date);
+    const matchDate = matchData.date.toDate();
     const now = new Date();
     const notificationTime = new Date(
       matchDate.getTime() - 1000 * 60 * 60 * 12

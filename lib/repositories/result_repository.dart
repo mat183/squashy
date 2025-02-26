@@ -22,23 +22,6 @@ class ResultRepository {
             .toList());
   }
 
-  Future<List<Result>> fetchResults() async {
-    final querySnapshot =
-        await FirebaseFirestore.instance.collection('results').get();
-    return querySnapshot.docs
-        .map(
-          (doc) => Result(
-            id: doc.id,
-            matchId: doc.get('matchId'),
-            userId: doc.get('userId'),
-            setsWon: doc.get('setsWon'),
-            setsLost: doc.get('setsLost'),
-            verdict: MatchVerdict.values.byName(doc.get('verdict')),
-          ),
-        )
-        .toList();
-  }
-
   Future<void> addResult(Result result) async {
     final resultRef = _firestore.collection('results').doc();
     await resultRef.set({

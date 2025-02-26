@@ -5,28 +5,18 @@ class MatchRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Stream<List<Match>> watchMatches() {
-    return _firestore.collection('matches').snapshots().map((snapshot) =>
-        snapshot.docs
+    return _firestore
+        .collection('matches')
+        .orderBy('date', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
             .map((doc) => Match(
                 id: doc.id,
                 userId: doc.get('userId'),
                 court: doc.get('court'),
-                date: DateTime.parse(doc.get('date')),
+                date: doc.get('date').toDate(),
                 status: MatchStatus.values.byName(doc.get('status'))))
             .toList());
-  }
-
-  Future<List<Match>> fetchMatches() async {
-    final querySnapshot =
-        await FirebaseFirestore.instance.collection('matches').get();
-    return querySnapshot.docs
-        .map((doc) => Match(
-            id: doc.id,
-            userId: doc.get('userId'),
-            court: doc.get('court'),
-            date: DateTime.parse(doc.get('date')),
-            status: MatchStatus.values.byName(doc.get('status'))))
-        .toList();
   }
 
   Future<void> addMatch(Match match) async {
@@ -34,7 +24,7 @@ class MatchRepository {
     await matchRef.set({
       'userId': match.userId,
       'court': match.court,
-      'date': match.date.toString(),
+      'date': Timestamp.fromDate(match.date),
       'status': match.status.toString().split('.').last,
     });
   }
@@ -55,7 +45,7 @@ class MatchRepository {
     await matchRef.set({
       'userId': match.userId,
       'court': match.court,
-      'date': match.date.toString(),
+      'date': Timestamp.fromDate(match.date),
       'status': match.status.toString().split('.').last,
     });
   }
