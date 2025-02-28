@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squashy/firebase_options.dart';
 import 'package:squashy/services/notification_service.dart';
+import 'package:squashy/services/token_service.dart';
 import 'package:squashy/utils/theme.dart';
 import 'package:squashy/screens/auth_gate.dart';
 
@@ -20,6 +21,7 @@ void main() async {
     print("Notifications provisional permission granted (iOS only)");
   }
 
+  TokenService.setupTokenListener();
   await NotificationService.initialize();
 
   runApp(const ProviderScope(

@@ -85,39 +85,34 @@ class MatchList extends ConsumerWidget {
           );
         }
 
-        return RefreshIndicator(
-          onRefresh: () async {
-            // await ref.read(matchNotifierProvider.notifier).refreshMatches();
+        return ListView.builder(
+          itemCount: scheduledMatches.length,
+          itemBuilder: (ctx, index) {
+            final Match match = scheduledMatches[index];
+            return Dismissible(
+              key: ValueKey(match.id),
+              background: Container(
+                color: Colors.red,
+                child: const Icon(
+                  Icons.delete,
+                  color: Colors.white,
+                ),
+              ),
+              confirmDismiss: (direction) => _confirmMatchRemove(ctx),
+              onDismissed: (direction) {
+                _removeMatch(ref, match);
+                ScaffoldMessenger.of(ctx).clearSnackBars();
+                ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                  content: const Text('League match has been removed!'),
+                ));
+              },
+              child: MatchItem(
+                match: match,
+                onTapItem: () => _editMatch(ctx, ref, match),
+                onLongPressItem: () => _resolveMatch(ctx, ref, match),
+              ),
+            );
           },
-          child: ListView.builder(
-            itemCount: scheduledMatches.length,
-            itemBuilder: (ctx, index) {
-              final Match match = scheduledMatches[index];
-              return Dismissible(
-                key: ValueKey(match.id),
-                background: Container(
-                  color: Colors.red,
-                  child: const Icon(
-                    Icons.delete,
-                    color: Colors.white,
-                  ),
-                ),
-                confirmDismiss: (direction) => _confirmMatchRemove(ctx),
-                onDismissed: (direction) {
-                  _removeMatch(ref, match);
-                  ScaffoldMessenger.of(ctx).clearSnackBars();
-                  ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                    content: const Text('League match has been removed!'),
-                  ));
-                },
-                child: MatchItem(
-                  match: match,
-                  onTapItem: () => _editMatch(ctx, ref, match),
-                  onLongPressItem: () => _resolveMatch(ctx, ref, match),
-                ),
-              );
-            },
-          ),
         );
       },
       error: (error, stack) => Center(child: Text("Error: $error")),

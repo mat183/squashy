@@ -3,7 +3,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { setGlobalOptions } from 'firebase-functions';
+import { setGlobalOptions, logger } from 'firebase-functions';
 
 admin.initializeApp();
 
@@ -17,7 +17,7 @@ export const scheduleMatchNotification = onDocumentCreated(
   async (event) => {
     const matchData = event.data?.data();
     if (!matchData || !matchData.date) {
-      console.log('No match data or date found.');
+      logger.warn('No match data or date found.');
       return null;
     }
 
@@ -27,12 +27,67 @@ export const scheduleMatchNotification = onDocumentCreated(
       matchDate.getTime() - 1000 * 60 * 60 * 12
     );
 
-    await db.collection('scheduled_notifications').add({
-      userId: matchData.userId,
-      matchId: event.params.matchId,
-      createdAt: Timestamp.fromDate(now),
-      sendAt: Timestamp.fromDate(notificationTime),
-    });
+    if (matchDate < now) {
+      const usersSnapshot = await admin.firestore().collection('users').get();
+      const tokens = [];
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data();
+        if (userData.fcmToken && doc.id !== matchData.userId) {
+          tokens.push(userData.fcmToken);
+        }
+      });
+
+      if (tokens.length === 0) {
+        logger.warn('No users to notify.');
+        return null;
+      }
+
+      const payload = {
+        notification: {
+          title: 'New match!',
+          body: `New match with past date on court ${matchData.court} added!`,
+        },
+        data: {
+          type: 'match_added',
+        },
+        android: {
+          priority: 'high',
+          notification: {
+            channelId: 'high_priority_channel',
+            sound: 'default',
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              contentAvailable: true,
+              sound: 'default',
+            },
+          },
+          headers: {
+            'apns-priority': '10',
+          },
+        },
+        tokens,
+      };
+
+      try {
+        const response = await messaging.sendEachForMulticast(payload);
+        logger.info(
+          `Notifications sent: ${response.successCount} success, ${response.failureCount} failed`
+        );
+        await doc.ref.delete();
+      } catch (error) {
+        logger.error('Error sending notifications:', error);
+      }
+    } else {
+      await db.collection('scheduled_notifications').add({
+        userId: matchData.userId,
+        matchId: event.params.matchId,
+        createdAt: Timestamp.fromDate(now),
+        sendAt: Timestamp.fromDate(notificationTime),
+      });
+    }
   }
 );
 
@@ -46,7 +101,7 @@ export const processScheduledNotifications = onSchedule(
       .get();
 
     if (snapshot.empty) {
-      console.log('No scheduled notifications to send.');
+      logger.info('No scheduled notifications to send.');
       return null;
     }
 
@@ -56,27 +111,24 @@ export const processScheduledNotifications = onSchedule(
       .filter(Boolean);
 
     if (tokens.length === 0) {
-      functions.logger.warn('No users to notify.');
+      logger.warn('No users to notify.');
       return null;
     }
 
     for (const doc of snapshot.docs) {
-      const { matchId, createdAt, sendAt } = doc.data();
+      const { matchId } = doc.data();
       const matchDoc = await db.collection('matches').doc(matchId).get();
 
       if (!matchDoc.exists) {
-        console.log('Match not found:', matchId);
+        logger.warn('Match not found:', matchId);
         continue;
       }
 
       const matchData = matchDoc.data();
       const payload = {
         notification: {
-          title: sendAt > createdAt ? 'Upcoming match!' : 'New match!',
-          body:
-            sendAt > createdAt
-              ? `Your match on court ${matchData.court} is coming up soon!`
-              : `New match with earlier date on court ${matchData.court} added!`,
+          title: 'Upcoming match!',
+          body: `Your match on court ${matchData.court} is coming up soon!`,
         },
         data: {
           type: 'scheduled_match_reminder',
@@ -104,12 +156,12 @@ export const processScheduledNotifications = onSchedule(
 
       try {
         const response = await messaging.sendEachForMulticast(payload);
-        console.log(
+        logger.info(
           `Notifications sent: ${response.successCount} success, ${response.failureCount} failed`
         );
         await doc.ref.delete();
       } catch (error) {
-        console.error('Error sending notifications:', error);
+        logger.error('Error sending notifications:', error);
       }
     }
   }

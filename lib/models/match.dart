@@ -21,7 +21,7 @@ const Map<int, String> courtNames = {
   4: 'GRENADA (4)',
   5: 'BARCELONA (5)',
   6: 'MADRYT (6)',
-  7: '7',
+  7: 'ALICANTE (7)',
   8: '8',
   9: '9',
   10: '10',
