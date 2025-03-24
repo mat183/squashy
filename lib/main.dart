@@ -1,28 +1,21 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squashy/firebase_options.dart';
-import 'package:squashy/services/notification_service.dart';
-import 'package:squashy/services/token_service.dart';
+import 'package:squashy/screens/scheduled_matches.dart';
+import 'package:squashy/screens/splash.dart';
 import 'package:squashy/utils/theme.dart';
-import 'package:squashy/screens/auth_gate.dart';
+import 'package:squashy/screens/auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  final settings = await FirebaseMessaging.instance.requestPermission();
-  if (settings.authorizationStatus == AuthorizationStatus.denied) {
-    print('Notifications permission denied!');
-  } else if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-    print('Notifications permission granted!');
-  } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-    print("Notifications provisional permission granted (iOS only)");
-  }
-
-  TokenService.setupTokenListener();
-  await NotificationService.initialize();
+  // TokenService.setupTokenListener();
+  // await NotificationService.initialize();
 
   runApp(const ProviderScope(
     child: MainApp(),
@@ -36,10 +29,24 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Squashy',
-      theme: appTheme(context, false),
-      darkTheme: appTheme(context, true),
+      // For now my custom theme is disabled. It will be polished soon...
+      // theme: appTheme(context, false),
+      // darkTheme: appTheme(context, true),
       themeMode: ThemeMode.system,
-      home: const AuthGate(),
+      home: StreamBuilder(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (ctx, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SplashScreen();
+          }
+
+          if (snapshot.hasData) {
+            return const ScheduledMatchesScreen();
+          }
+
+          return const AuthScreen();
+        },
+      ),
     );
   }
 }

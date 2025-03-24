@@ -1,4 +1,5 @@
-import 'package:firebase_ui_auth/firebase_ui_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squashy/models/match.dart';
@@ -7,9 +8,16 @@ import 'package:squashy/widgets/main_drawer.dart';
 import 'package:squashy/widgets/match_list.dart';
 import 'package:squashy/forms/new_match.dart';
 
-class MainScreen extends ConsumerWidget {
-  const MainScreen({super.key});
+class ScheduledMatchesScreen extends ConsumerStatefulWidget {
+  const ScheduledMatchesScreen({super.key});
 
+  @override
+  ConsumerState<ScheduledMatchesScreen> createState() =>
+      _ScheduledMatchesScreenState();
+}
+
+class _ScheduledMatchesScreenState
+    extends ConsumerState<ScheduledMatchesScreen> {
   void _addMatch(BuildContext context, WidgetRef ref) async {
     final newMatch = await Navigator.push<Match>(
       context,
@@ -23,30 +31,32 @@ class MainScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _setupPushNotifications() async {
+    final fcm = FirebaseMessaging.instance;
+    await fcm.requestPermission();
+    fcm.subscribeToTopic('matches');
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    _setupPushNotifications();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Squash league'),
+        title: const Text('Scheduled matches'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
             onPressed: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (ctx) => ProfileScreen(
-                      appBar: AppBar(
-                        title: const Text('User Profile'),
-                      ),
-                      actions: [
-                        SignedOutAction(
-                          (ctx) => Navigator.pop(ctx),
-                        ),
-                      ],
-                    ),
-                  ));
+              FirebaseAuth.instance.signOut();
             },
+            icon: Icon(
+              Icons.exit_to_app,
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
         ],
       ),
