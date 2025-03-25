@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 enum MatchStatus {
   scheduled,
@@ -16,16 +17,16 @@ const Map<MatchStatus, Icon> statusIcons = {
 // TODO: to be fulfilled during the year :)
 const Map<int, String> courtNames = {
   1: '1',
-  2: 'SARAGOSSA (2)',
-  3: 'SANTA CRUZ (3)',
-  4: 'GRENADA (4)',
-  5: 'BARCELONA (5)',
-  6: 'MADRYT (6)',
-  7: 'ALICANTE (7)',
-  8: '8',
-  9: '9',
-  10: '10',
-  11: '11',
+  2: 'SARAGOSSA',
+  3: 'SANTA CRUZ',
+  4: 'GRENADA',
+  5: 'BARCELONA',
+  6: 'MADRYT',
+  7: 'ALICANTE',
+  8: 'SEWILLA',
+  9: 'TOLEDO',
+  10: 'IBIZA',
+  11: 'MALAGA',
   12: '12',
   13: '13',
   14: '14',
@@ -49,13 +50,16 @@ const Map<int, String> courtNames = {
   32: '32',
 };
 
+const uuid = Uuid();
+
 class Match {
-  const Match(
-      {required this.id,
-      required this.userId,
+  Match(
+      {required this.userId,
       required this.court,
       required this.date,
-      required this.status});
+      required this.status,
+      String? id})
+      : id = id ?? uuid.v4();
 
   final String id;
   final String userId;

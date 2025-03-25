@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squashy/models/match.dart';
-import 'package:squashy/models/result.dart';
 import 'package:squashy/providers/match_provider.dart';
-import 'package:squashy/providers/result_provider.dart';
 import 'package:squashy/forms/resolve_match.dart';
 import 'package:squashy/widgets/match_item.dart';
 import 'package:squashy/forms/new_match.dart';
@@ -31,37 +29,25 @@ class MatchList extends ConsumerWidget {
     );
   }
 
-  void _editMatch(BuildContext context, WidgetRef ref, Match match) async {
-    final editedMatch = await Navigator.push<Match>(
+  void _editMatch(BuildContext context, Match match) {
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (ctx) => NewMatchForm(match: match),
       ),
     );
-
-    if (editedMatch != null) {
-      await ref.read(matchNotifierProvider.notifier).replaceMatch(editedMatch);
-    }
   }
 
-  void _resolveMatch(BuildContext context, WidgetRef ref, Match match) async {
-    final result = await Navigator.push<Result>(
-        context,
-        MaterialPageRoute(
-            builder: (ctx) => ResolveMatchForm(matchId: match.id)));
-
-    if (result != null) {
-      await ref
-          .read(matchNotifierProvider.notifier)
-          .updateMatch(match.id, MatchStatus.resolved);
-      await ref.read(resultNotifierProvider.notifier).addResult(result);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content:
-              Text('League match resolved and result moved to summary tab!'),
-        ));
-      }
+  void _resolveMatch(BuildContext context, Match match) async {
+    final isResolved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (ctx) => ResolveMatchForm(matchId: match.id)),
+    );
+    if (context.mounted && isResolved != null && isResolved) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('League match resolved and result moved to summary tab!'),
+      ));
     }
   }
 
@@ -108,8 +94,8 @@ class MatchList extends ConsumerWidget {
               },
               child: MatchItem(
                 match: match,
-                onTapItem: () => _editMatch(ctx, ref, match),
-                onLongPressItem: () => _resolveMatch(ctx, ref, match),
+                onTapItem: () => _editMatch(ctx, match),
+                onLongPressItem: () => _resolveMatch(ctx, match),
               ),
             );
           },

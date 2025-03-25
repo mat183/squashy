@@ -36,7 +36,7 @@ class MatchNotifier extends _$MatchNotifier {
     }
   }
 
-  Future<void> updateMatch(String matchId, MatchStatus status) async {
+  Future<void> resolveMatch(String matchId) async {
     state = const AsyncLoading();
     try {
       User? user = FirebaseAuth.instance.currentUser;
@@ -47,7 +47,7 @@ class MatchNotifier extends _$MatchNotifier {
 
       await ref.read(matchRepositoryProvider).updateMatch(matchId, {
         'userId': user.uid,
-        'status': status.toString().split('.').last,
+        'status': MatchStatus.resolved.toString().split('.').last,
       });
       state = const AsyncData(null);
     } catch (error) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 enum MatchVerdict {
   win,
@@ -21,14 +22,17 @@ const Map<MatchVerdict, Icon> verdictIcons = {
   )
 };
 
+const uuid = Uuid();
+
 class Result {
-  const Result(
-      {required this.id,
-      required this.matchId,
+  Result(
+      {required this.matchId,
       required this.userId,
       required this.setsWon,
       required this.setsLost,
-      required this.verdict});
+      required this.verdict,
+      String? id})
+      : id = id ?? uuid.v4();
 
   final String id;
   final String matchId;

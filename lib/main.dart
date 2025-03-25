@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squashy/firebase_options.dart';
 import 'package:squashy/screens/scheduled_matches.dart';
 import 'package:squashy/screens/splash.dart';
-import 'package:squashy/utils/theme.dart';
+// import 'package:squashy/utils/theme.dart';
 import 'package:squashy/screens/auth.dart';
 
 void main() async {

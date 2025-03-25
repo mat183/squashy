@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:squashy/models/match.dart';
+import 'package:squashy/repositories/match_repository.dart';
 
 class NewMatchForm extends ConsumerStatefulWidget {
   const NewMatchForm({super.key, this.match});
@@ -71,28 +72,36 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
     });
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     User? user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      print('User not logged in!');
       Navigator.pop(context);
     }
 
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      Navigator.pop(
-        context,
-        Match(
-          id: _isEditing
-              ? widget.match!.id
-              : '0', // dummy id here, because it is set in matches_provider
+      final matchRepo = MatchRepository();
+
+      if (_isEditing) {
+        await matchRepo.replaceMatch(Match(
+            id: widget.match!.id,
+            userId: user!.uid,
+            court: _selectedCourt,
+            date: _selectedDate,
+            status: _matchStatus));
+      } else {
+        await matchRepo.addMatch(Match(
           userId: user!.uid,
           court: _selectedCourt,
           date: _selectedDate,
           status: _matchStatus,
-        ),
-      );
+        ));
+      }
+
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -116,6 +125,12 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
     _selectedCourt = _isEditing ? widget.match!.court : 1;
     _selectedDate = _isEditing ? widget.match!.date : roundedNow;
     _matchStatus = _isEditing ? widget.match!.status : MatchStatus.scheduled;
+  }
+
+  @override
+  void dispose() {
+    _dateController.dispose();
+    super.dispose();
   }
 
   @override

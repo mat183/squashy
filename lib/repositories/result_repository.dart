@@ -23,7 +23,7 @@ class ResultRepository {
   }
 
   Future<void> addResult(Result result) async {
-    final resultRef = _firestore.collection('results').doc();
+    final resultRef = _firestore.collection('results').doc(result.id);
     await resultRef.set({
       'matchId': result.matchId,
       'userId': result.userId,

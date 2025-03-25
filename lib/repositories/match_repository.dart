@@ -7,7 +7,7 @@ class MatchRepository {
   Stream<List<Match>> watchMatches() {
     return _firestore
         .collection('matches')
-        .orderBy('date', descending: true)
+        .orderBy('date', descending: false)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => Match(
@@ -20,7 +20,7 @@ class MatchRepository {
   }
 
   Future<void> addMatch(Match match) async {
-    final matchRef = _firestore.collection('matches').doc();
+    final matchRef = _firestore.collection('matches').doc(match.id);
     await matchRef.set({
       'userId': match.userId,
       'court': match.court,
