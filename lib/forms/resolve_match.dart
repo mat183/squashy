@@ -1,9 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:squashy/models/match.dart';
-import 'package:squashy/models/result.dart';
 import 'package:squashy/repositories/match_repository.dart';
-import 'package:squashy/repositories/result_repository.dart';
 
 class ResolveMatchForm extends StatefulWidget {
   const ResolveMatchForm({super.key, required this.matchId});
@@ -16,6 +14,7 @@ class ResolveMatchForm extends StatefulWidget {
 
 class _ResolveMatchFormState extends State<ResolveMatchForm> {
   final _formKey = GlobalKey<FormState>();
+  final _matchRepo = MatchRepository();
 
   int _myScore = 0;
   int _opponentsScore = 0;
@@ -33,25 +32,15 @@ class _ResolveMatchFormState extends State<ResolveMatchForm> {
 
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final verdict = _myScore > _opponentsScore
-          ? MatchVerdict.win
-          : _myScore < _opponentsScore
-              ? MatchVerdict.loss
-              : MatchVerdict.draw;
-      await MatchRepository().updateMatch(
+      await _matchRepo.updateMatch(
         widget.matchId,
         {
           'userId': user.uid,
+          'setsWon': _myScore,
+          'setsLost': _opponentsScore,
           'status': MatchStatus.resolved.toString().split('.').last,
         },
       );
-      await ResultRepository().addResult(Result(
-        matchId: widget.matchId,
-        userId: user.uid,
-        setsWon: _myScore,
-        setsLost: _opponentsScore,
-        verdict: verdict,
-      ));
 
       if (context.mounted) {
         Navigator.pop(context, true);

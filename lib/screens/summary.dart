@@ -1,49 +1,63 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squashy/models/match.dart';
-import 'package:squashy/models/result.dart';
-import 'package:squashy/providers/match_provider.dart';
-import 'package:squashy/providers/result_provider.dart';
+import 'package:squashy/repositories/match_repository.dart';
 import 'package:squashy/widgets/result_item.dart';
 
-class SummaryScreen extends ConsumerWidget {
+class SummaryScreen extends StatefulWidget {
   const SummaryScreen({super.key});
 
-  void _removeResult(WidgetRef ref, Result result) async {
-    await ref.read(resultNotifierProvider.notifier).removeResult(result.id);
-    await ref.read(matchNotifierProvider.notifier).removeMatch(result.matchId);
+  @override
+  State<StatefulWidget> createState() => _SummaryScreenState();
+}
+
+class _SummaryScreenState extends State<SummaryScreen> {
+  final _matchRepo = MatchRepository();
+
+  Future<void> _removeResult(String matchId) async {
+    await _matchRepo.removeMatch(matchId);
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final allResults = ref.watch(resultStreamProvider);
-
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Summary'),
       ),
-      body: allResults.when(
-        data: (results) {
-          final resolvedMatches = ref
-              .read(matchStreamProvider)
-              .requireValue
-              .where((match) => match.status == MatchStatus.resolved)
-              .toList();
+      body: StreamBuilder(
+        stream: _matchRepo.watchMatchesDescending(),
+        builder: (ctx, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
-          if (resolvedMatches.isEmpty) {
+          if (!snapshot.hasData ||
+              snapshot.data!
+                  .where((match) => match.status == MatchStatus.resolved)
+                  .isEmpty) {
             return const Center(
               child: Text('No resolved matches yet!'),
             );
           }
 
-          final wins = results
-              .where((result) => result.verdict == MatchVerdict.win)
+          if (snapshot.hasError) {
+            return Center(
+              child: Text("Error: ${snapshot.error}"),
+            );
+          }
+
+          final resolvedMatches = snapshot.data!
+              .where((match) => match.status == MatchStatus.resolved)
+              .toList();
+          final wins = resolvedMatches
+              .where((match) => match.setsWon > match.setsLost)
               .length;
-          final draws = results
-              .where((result) => result.verdict == MatchVerdict.draw)
+          final draws = resolvedMatches
+              .where((match) => match.setsWon == match.setsLost)
               .length;
-          final losses = results
-              .where((result) => result.verdict == MatchVerdict.loss)
+          final losses = resolvedMatches
+              .where((match) => match.setsWon < match.setsLost)
               .length;
           return Column(
             children: [
@@ -52,7 +66,7 @@ class SummaryScreen extends ConsumerWidget {
                   padding: EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      Text("Total Matches: ${results.length}",
+                      Text("Total Matches: ${resolvedMatches.length}",
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.bold)),
                       SizedBox(height: 8),
@@ -79,11 +93,9 @@ class SummaryScreen extends ConsumerWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               Expanded(
                 child: ListView.builder(
-                  itemCount: results.length,
+                  itemCount: resolvedMatches.length,
                   itemBuilder: (ctx, index) {
-                    final Result result = results[index];
-                    final Match match = resolvedMatches
-                        .firstWhere((m) => m.id == result.matchId);
+                    final Match match = resolvedMatches[index];
                     return Dismissible(
                       key: ValueKey(match.id),
                       background: Container(
@@ -94,17 +106,18 @@ class SummaryScreen extends ConsumerWidget {
                         ),
                       ),
                       onDismissed: (direction) {
-                        _removeResult(ref, result);
-                        ScaffoldMessenger.of(ctx).clearSnackBars();
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          const SnackBar(
-                            content: Text('League match has been removed!'),
-                          ),
-                        );
+                        _removeResult(match.id);
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).clearSnackBars();
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(
+                              content: Text('League match has been removed!'),
+                            ),
+                          );
+                        }
                       },
                       child: ResultItem(
                         match: match,
-                        result: result,
                       ),
                     );
                   },
@@ -113,8 +126,6 @@ class SummaryScreen extends ConsumerWidget {
             ],
           );
         },
-        error: (error, stack) => Center(child: Text("Error: $error")),
-        loading: () => const Center(child: CircularProgressIndicator()),
       ),
     );
   }

@@ -2,11 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 
+const uuid = Uuid();
+
 enum MatchStatus {
   scheduled,
   resolved,
   cancelled,
 }
+
+enum MatchVerdict {
+  win,
+  loss,
+  draw,
+}
+
+const Map<MatchVerdict, Icon> verdictIcons = {
+  MatchVerdict.win: Icon(
+    Icons.check_circle,
+    color: Colors.green,
+  ),
+  MatchVerdict.loss: Icon(
+    Icons.cancel,
+    color: Colors.red,
+  ),
+  MatchVerdict.draw: Icon(
+    Icons.do_disturb_on,
+    color: Colors.blue,
+  )
+};
 
 const Map<MatchStatus, Icon> statusIcons = {
   MatchStatus.scheduled: Icon(Icons.schedule),
@@ -50,21 +73,23 @@ const Map<int, String> courtNames = {
   32: '32',
 };
 
-const uuid = Uuid();
-
 class Match {
-  Match(
-      {required this.userId,
-      required this.court,
-      required this.date,
-      required this.status,
-      String? id})
-      : id = id ?? uuid.v4();
+  Match({
+    required this.userId,
+    required this.court,
+    required this.date,
+    this.setsWon = 0,
+    this.setsLost = 0,
+    this.status = MatchStatus.scheduled,
+    String? id,
+  }) : id = id ?? uuid.v4();
 
   final String id;
   final String userId;
   final int court;
   final DateTime date;
+  final int setsWon;
+  final int setsLost;
   final MatchStatus status;
 
   String get formattedDate => DateFormat('yyyy-MM-dd HH:mm').format(date);

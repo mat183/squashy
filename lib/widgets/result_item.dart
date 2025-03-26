@@ -1,27 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:squashy/models/match.dart';
-import 'package:squashy/models/result.dart';
 
 class ResultItem extends StatelessWidget {
   const ResultItem({
     super.key,
     required this.match,
-    required this.result,
   });
 
   final Match match;
-  final Result result;
 
   @override
   Widget build(BuildContext context) {
+    final verdict = match.setsWon > match.setsLost
+        ? MatchVerdict.win
+        : match.setsWon < match.setsLost
+            ? MatchVerdict.loss
+            : MatchVerdict.draw;
     return Card(
       child: ListTile(
-        leading: verdictIcons[result.verdict],
+        leading: verdictIcons[verdict],
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              result.setsWon.toString(),
+              match.setsWon.toString(),
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             SizedBox(width: 8),
@@ -31,7 +33,7 @@ class ResultItem extends StatelessWidget {
             ),
             SizedBox(width: 8),
             Text(
-              result.setsLost.toString(),
+              match.setsLost.toString(),
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ],

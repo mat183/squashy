@@ -1,27 +1,26 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:squashy/models/match.dart';
 import 'package:squashy/repositories/match_repository.dart';
 
-class NewMatchForm extends ConsumerStatefulWidget {
+class NewMatchForm extends StatefulWidget {
   const NewMatchForm({super.key, this.match});
 
   final Match? match;
 
   @override
-  ConsumerState<NewMatchForm> createState() => _NewMatchFormState();
+  State<NewMatchForm> createState() => _NewMatchFormState();
 }
 
-class _NewMatchFormState extends ConsumerState<NewMatchForm> {
+class _NewMatchFormState extends State<NewMatchForm> {
   final _formKey = GlobalKey<FormState>();
 
   late bool _isEditing;
   late TextEditingController _dateController;
   late int _selectedCourt;
   late DateTime _selectedDate;
-  late MatchStatus _matchStatus;
 
   void _selectDate() async {
     DateTime? pickedDate = await showDatePicker(
@@ -31,7 +30,7 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
       initialDate: DateTime.now(),
     );
 
-    if (pickedDate == null) {
+    if (!context.mounted || pickedDate == null) {
       return;
     }
 
@@ -76,7 +75,7 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
     User? user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      Navigator.pop(context);
+      throw Exception('User is not authenticated!');
     }
 
     if (_formKey.currentState!.validate()) {
@@ -84,18 +83,19 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
       final matchRepo = MatchRepository();
 
       if (_isEditing) {
-        await matchRepo.replaceMatch(Match(
-            id: widget.match!.id,
-            userId: user!.uid,
-            court: _selectedCourt,
-            date: _selectedDate,
-            status: _matchStatus));
+        await matchRepo.updateMatch(
+          widget.match!.id,
+          {
+            'userId': user.uid,
+            'court': _selectedCourt,
+            'date': Timestamp.fromDate(_selectedDate)
+          },
+        );
       } else {
         await matchRepo.addMatch(Match(
-          userId: user!.uid,
+          userId: user.uid,
           court: _selectedCourt,
           date: _selectedDate,
-          status: _matchStatus,
         ));
       }
 
@@ -124,7 +124,6 @@ class _NewMatchFormState extends ConsumerState<NewMatchForm> {
     );
     _selectedCourt = _isEditing ? widget.match!.court : 1;
     _selectedDate = _isEditing ? widget.match!.date : roundedNow;
-    _matchStatus = _isEditing ? widget.match!.status : MatchStatus.scheduled;
   }
 
   @override
