@@ -1,8 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:squashy/screens/stats.dart';
 import 'package:squashy/screens/summary.dart';
+
+enum ScreenType {
+  scheduledMatches,
+  summary,
+  statistics,
+}
 
 class MainDrawer extends StatelessWidget {
   const MainDrawer({super.key});
+
+  void _navigateToScreen(BuildContext context, ScreenType screen) {
+    Navigator.pop(context);
+    if (screen != ScreenType.scheduledMatches) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (ctx) => screen == ScreenType.summary
+              ? const SummaryScreen()
+              : const StatsScreen(),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,27 +63,18 @@ class MainDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.calendar_month),
             title: const Text('Scheduled matches'),
-            onTap: () {
-              Navigator.pop(context);
-            },
+            onTap: () =>
+                _navigateToScreen(context, ScreenType.scheduledMatches),
           ),
           ListTile(
             leading: const Icon(Icons.summarize),
             title: const Text('Summary'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (ctx) => const SummaryScreen(),
-                ),
-              );
-            },
+            onTap: () => _navigateToScreen(context, ScreenType.summary),
           ),
           ListTile(
             leading: const Icon(Icons.bar_chart),
             title: const Text('Statistics'),
-            onTap: () {},
+            onTap: () => _navigateToScreen(context, ScreenType.statistics),
           ),
         ],
       ),

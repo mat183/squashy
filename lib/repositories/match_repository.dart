@@ -40,6 +40,22 @@ class MatchRepository {
             .toList());
   }
 
+  Future<List<Match>> fetchMatches() async {
+    final querySnapshot =
+        await _firestore.collection('matches').orderBy('date').get();
+    return querySnapshot.docs
+        .map((doc) => Match(
+              id: doc.id,
+              userId: doc.get('userId'),
+              court: doc.get('court'),
+              date: doc.get('date').toDate(),
+              setsWon: doc.get('setsWon'),
+              setsLost: doc.get('setsLost'),
+              status: MatchStatus.values.byName(doc.get('status')),
+            ))
+        .toList();
+  }
+
   Future<void> addMatch(Match match) async {
     final matchRef = _firestore.collection('matches').doc(match.id);
     await matchRef.set({
