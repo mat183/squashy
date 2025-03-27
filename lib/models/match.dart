@@ -50,7 +50,7 @@ const Map<int, String> courtNames = {
   9: 'TOLEDO',
   10: 'IBIZA',
   11: 'MALAGA',
-  12: '12',
+  12: 'BILBAO',
   13: '13',
   14: '14',
   15: '15',
