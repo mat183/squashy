@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:squashy/firebase_options.dart';
 import 'package:squashy/screens/scheduled_matches.dart';
 import 'package:squashy/screens/splash.dart';
@@ -27,7 +28,7 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return ShadApp.material(
       title: 'Squashy',
       // For now my custom theme is disabled. It will be polished soon...
       // theme: appTheme(context, false),
