@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:squashy/screens/about.dart';
 import 'package:squashy/screens/stats.dart';
 import 'package:squashy/screens/summary.dart';
 
@@ -6,21 +7,25 @@ enum ScreenType {
   scheduledMatches,
   summary,
   statistics,
+  about,
 }
 
 class MainDrawer extends StatelessWidget {
   const MainDrawer({super.key});
 
-  void _navigateToScreen(BuildContext context, ScreenType screen) {
+  void _navigateToScreen(BuildContext context, ScreenType screenType) {
     Navigator.pop(context);
-    if (screen != ScreenType.scheduledMatches) {
+    if (screenType != ScreenType.scheduledMatches) {
+      Widget screen = const SummaryScreen();
+      if (screenType == ScreenType.statistics) {
+        screen = const StatsScreen();
+      } else if (screenType == ScreenType.about) {
+        screen = const AboutScreen();
+      }
+
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (ctx) => screen == ScreenType.summary
-              ? const SummaryScreen()
-              : const StatsScreen(),
-        ),
+        MaterialPageRoute(builder: (ctx) => screen),
       );
     }
   }
@@ -76,6 +81,11 @@ class MainDrawer extends StatelessWidget {
             title: const Text('Statistics'),
             onTap: () => _navigateToScreen(context, ScreenType.statistics),
           ),
+          ListTile(
+            leading: const Icon(Icons.info),
+            title: const Text('About'),
+            onTap: () => _navigateToScreen(context, ScreenType.about),
+          )
         ],
       ),
     );
