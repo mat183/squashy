@@ -49,6 +49,7 @@ app.*.map.json
 android/.gradle/
 android/app/debug.keystore
 android/key.properties
+android/app/.cxx/
 
 # Firebase Config Files (DO NOT COMMIT!)
 ios/Runner/GoogleService-Info.plist
