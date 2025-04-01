@@ -16,9 +16,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // TokenService.setupTokenListener();
-  // await NotificationService.initialize();
-
   runApp(const ProviderScope(
     child: MainApp(),
   ));

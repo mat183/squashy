@@ -24,7 +24,12 @@ class _ScheduledMatchesScreenState extends State<ScheduledMatchesScreen> {
 
   Future<void> _setupPushNotifications() async {
     final fcm = FirebaseMessaging.instance;
-    await fcm.requestPermission();
+    NotificationSettings fcmSettings = await fcm.requestPermission();
+
+    if (fcmSettings.authorizationStatus != AuthorizationStatus.authorized) {
+      throw Exception('Notifications has not been authorized!');
+    }
+
     fcm.subscribeToTopic('matches');
   }
 
